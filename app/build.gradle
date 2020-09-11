@@ -38,6 +38,7 @@ dependencies {
     implementation 'org.simpleframework:simple-xml:2.7.1'
     implementation 'com.squareup.retrofit2:converter-simplexml:2.9.0'
     testImplementation 'junit:junit:4.+'
+    implementation 'com.google.android.material:material:1.2.1'
     implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

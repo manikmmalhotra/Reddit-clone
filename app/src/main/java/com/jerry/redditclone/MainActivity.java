@@ -2,10 +2,16 @@ package com.jerry.redditclone;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
+import com.jerry.redditclone.comments.CommentsActivity;
 import com.jerry.redditclone.model.Feed;
 import com.jerry.redditclone.model.entry.Entrys;
 
@@ -20,22 +26,49 @@ import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final  String BASE_URL = "https://www.reddit.com/r/";
+    URLS urls = new URLS();
 
+    private Button btnRefreshFeed;
+    private EditText mFeedName;
+    private String currentFeed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        btnRefreshFeed = (Button) findViewById(R.id.btnRefreshFeed);
 
+        mFeedName = (EditText) findViewById(R.id.etFeedName);
+
+        init();
+
+        btnRefreshFeed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String feedName = mFeedName.getText().toString();
+                if(!feedName.equals("")){
+                    currentFeed = feedName;
+                    init();
+                }
+                else{
+                    init();
+                }
+            }
+        });
+
+
+
+    }
+
+    private void init(){
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(urls.BASE_URL)
                 .addConverterFactory(SimpleXmlConverterFactory.create())
                 .build();
 
         FeedApi feedapi = retrofit.create(FeedApi.class);
 
-        Call<Feed> call = feedapi.getFeed();
+        Call<Feed> call = feedapi.getFeed(currentFeed);
 
         call.enqueue(new Callback<Feed>() {
             @Override
@@ -46,10 +79,10 @@ public class MainActivity extends AppCompatActivity {
                 List<Entrys> entrys = response.body().getEntry();
                 Log.d("manik",response.body().getEntry().toString());
 
-                ArrayList<Post> posts = new ArrayList<Post>();
+               final ArrayList<Post> posts = new ArrayList<Post>();
                 for( int i = 0;i < entrys.size();i++){
                     ExtractXML extractXML1 = new ExtractXML(entrys.get(i).getContent(), "<a href=");
-                   List<String> postContent = extractXML1.start();
+                    List<String> postContent = extractXML1.start();
 
                     ExtractXML extractXML2 = new ExtractXML(entrys.get(i).getContent(), "<img src=");
 
@@ -81,6 +114,19 @@ public class MainActivity extends AppCompatActivity {
                 ListView listView = (ListView) findViewById(R.id.listView);
                 CustomListAdapter customListAdapter = new CustomListAdapter(MainActivity.this, R.layout.card_layout_main, posts);
                 listView.setAdapter(customListAdapter);
+
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        Intent intent = new Intent(MainActivity.this, CommentsActivity.class);
+                        intent.putExtra("@string/post_url", posts.get(position).getPostUrl());
+                        intent.putExtra("@string/post_thumbnail", posts.get(position).getThumbnailURL());
+                        intent.putExtra("@string/post_title", posts.get(position).getTitle());
+                        intent.putExtra("@string/post_author", posts.get(position).getAuthor());
+                        intent.putExtra("@string/post_updated", posts.get(position).getDate_updated());
+                        startActivity(intent);
+                    }
+                });
             }
 
             @Override
@@ -88,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
 
 
     }
